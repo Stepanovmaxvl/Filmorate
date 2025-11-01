@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.controller;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exeption.NotFoundException;
 import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -20,33 +21,33 @@ public class UserController {
 
     @PostMapping
     public User createUser(@Valid @RequestBody User user) {
-        log.info("Пришёл запрос на создание пользователя с логином " + user.getLogin());
         validate(user);
         user.setId(idCounter++);
         users.put(user.getId(), user);
+        log.info("User created: id={}, login={}", user.getId(), user.getLogin());
         return user;
     }
 
     @GetMapping
     public List<User> getUsersList() {
+        log.info("Getting users list: count={}", users.size());
         return new ArrayList<>(users.values());
     }
 
     @PutMapping
     public User updateUser(@Valid @RequestBody User user) {
-        log.info("Пришёл запрос на обновление данных пользователя с логином " + user.getLogin());
         validate(user);
-        if (users.containsKey(user.getId())) {
-            User newUser = users.get(user.getId());
-            newUser.setEmail(user.getEmail());
-            newUser.setLogin(user.getLogin());
-            newUser.setName(user.getName());
-            newUser.setBirthday(user.getBirthday());
-            users.put(newUser.getId(), newUser);
-            return newUser;
-        } else {
-            throw new ValidationException("Произошла ошибка");
+        if (!users.containsKey(user.getId())) {
+            throw new NotFoundException("Пользователь с id " + user.getId() + " не найден");
         }
+        User existingUser = users.get(user.getId());
+        existingUser.setEmail(user.getEmail());
+        existingUser.setLogin(user.getLogin());
+        existingUser.setName(user.getName());
+        existingUser.setBirthday(user.getBirthday());
+        users.put(user.getId(), existingUser);
+        log.info("User updated: id={}, login={}", user.getId(), user.getLogin());
+        return existingUser;
     }
 
     private void validate(User user) {

@@ -3,11 +3,9 @@ package ru.yandex.practicum.filmorate.controller;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exeption.ValidationException;
+import ru.yandex.practicum.filmorate.exeption.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.time.LocalDate;
-import java.time.Month;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,31 +20,30 @@ public class FilmController {
 
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film) {
-        log.info("Пришёл запрос на создание фильма с названием " + film.getName());
-        if (film.getReleaseDate().isBefore(LocalDate.of(1895, Month.DECEMBER, 28))) {
-            throw new ValidationException("Дата релиза фильма не может быть настолько ранней");
-        }
         film.setId(idCounter++);
         films.put(film.getId(), film);
+        log.info("Film created: id={}, name={}", film.getId(), film.getName());
         return film;
     }
 
     @GetMapping
     public List<Film> getFilmsList() {
+        log.info("Getting films list: count={}", films.size());
         return new ArrayList<>(films.values());
     }
 
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film) {
-        log.info("Пришёл запрос на обновление данных фильма с названием " + film.getName());
-        if (films.containsKey(film.getId())) {
-            films.get(film.getId()).setName(film.getName());
-            films.get(film.getId()).setDescription(film.getDescription());
-            films.get(film.getId()).setReleaseDate(film.getReleaseDate());
-            films.get(film.getId()).setDuration(film.getDuration());
-            return films.get(film.getId());
-        } else {
-            throw new ValidationException("Произошла ошибка");
+        if (!films.containsKey(film.getId())) {
+            throw new NotFoundException("Фильм с id " + film.getId() + " не найден");
         }
+        Film existingFilm = films.get(film.getId());
+        existingFilm.setName(film.getName());
+        existingFilm.setDescription(film.getDescription());
+        existingFilm.setReleaseDate(film.getReleaseDate());
+        existingFilm.setDuration(film.getDuration());
+        films.put(film.getId(), existingFilm);
+        log.info("Film updated: id={}, name={}", film.getId(), film.getName());
+        return existingFilm;
     }
 }

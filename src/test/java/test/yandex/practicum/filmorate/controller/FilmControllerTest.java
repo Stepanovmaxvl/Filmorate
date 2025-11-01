@@ -6,15 +6,12 @@ import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import ru.yandex.practicum.filmorate.controller.FilmController;
-import ru.yandex.practicum.filmorate.exeption.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.time.LocalDate;
 import java.time.Month;
 
 public class FilmControllerTest {
-    private final FilmController filmController = new FilmController();
     private static Validator validator;
 
     @BeforeAll
@@ -27,7 +24,7 @@ public class FilmControllerTest {
     public void createFilm_noCreateFilm() {
         Film film = new Film();
 
-        Assertions.assertThrows(RuntimeException.class, () -> filmController.createFilm(film));
+        Assertions.assertFalse(validator.validate(film).isEmpty());
     }
 
     @Test
@@ -58,7 +55,7 @@ public class FilmControllerTest {
         film.setDescription("Описание");
         film.setReleaseDate(LocalDate.of(1895, Month.DECEMBER, 27));
         film.setDuration(106);
-        Assertions.assertThrows(ValidationException.class, () -> filmController.createFilm(film));
+        Assertions.assertFalse(validator.validate(film).isEmpty());
     }
 
     @Test
