@@ -2,13 +2,14 @@ package ru.yandex.practicum.filmorate.storage.film;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -29,10 +30,10 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     @Override
     public Film updateFilm(Film film) {
-        if (!films.containsKey(film.getId())) {
-            throw new NotFoundException("Фильм с id " + film.getId() + " не найден");
-        }
         Film existingFilm = films.get(film.getId());
+        if (existingFilm == null) {
+            throw new IllegalStateException("Attempt to update non-existing film with id " + film.getId());
+        }
         existingFilm.setName(film.getName());
         existingFilm.setDescription(film.getDescription());
         existingFilm.setReleaseDate(film.getReleaseDate());
@@ -49,11 +50,16 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Film getFilmById(Integer id) {
-        if (!films.containsKey(id)) {
-            throw new NotFoundException("Фильм с id " + id + " не найден");
-        }
-        return films.get(id);
+    public List<Film> getPopularFilms(int limit) {
+        return films.values().stream()
+                .sorted((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()))
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<Film> findFilmById(Integer id) {
+        return Optional.ofNullable(films.get(id));
     }
 }
 
